@@ -5,10 +5,3 @@
 1. Docker
 2. CI/CD (GitHub Actions)
 3. Linux (Bash)
-# devops-course-2026# Обо мне
-- ФИО: Чувилов Александр Александрович
-- Группа: ЭФБО-07-24
-- Технологии, которые хочу освоить в этом курсе:
-1. Docker
-2. CI/CD (GitHub Actions)
-3. Linux (Bash)
