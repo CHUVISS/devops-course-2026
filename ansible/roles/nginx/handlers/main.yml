@@ -1,0 +1,13 @@
+---
+- name: Validate Nginx before reload
+  ansible.builtin.command: nginx -t
+  register: nginx_config_check
+  changed_when: false
+  listen: Reload Nginx
+
+- name: Reload Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+  when: nginx_config_check.rc == 0
+  listen: Reload Nginx
