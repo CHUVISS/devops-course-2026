@@ -127,3 +127,28 @@
 
   Завершающий / в proxy_pass заменяет префикс /app/ на /. Применение: sudo nginx -t && sudo systemctl reload nginx. Проверка: curl --cacert ~/devops.crt https://devops.local/app/health → ok.
 - Диагностика: 502 Bad Gateway и запись connect() failed (111: Connection refused) while connecting to upstream в /var/log/nginx/devops-site.error.log означают, что контейнер приложения не принимает соединения на 127.0.0.1:5000 (docker compose ps, docker compose logs app).
+
+## 10. Ansible
+
+Плейбуки находятся в каталоге `ansible/`. Управляющий узел — macOS с Ansible, управляемый — отдельная Ubuntu Server 24.04 amd64 в QEMU. В гостевой системе SSH слушает 22, Nginx — 80. На Mac им соответствуют `127.0.0.1:22211` и `127.0.0.1:18011`. Для отдельной Host-only VM замените адрес и SSH-порт в обоих inventory.
+
+| Роль | Ответственность |
+|---|---|
+| `base` | Проверка ОС, зависимости модулей, официальный Docker Engine |
+| `ssh` | Пользователь `devops`, открытый ключ, sudo, проверка входа и настройки SSH/UFW |
+| `nginx` | Reverse proxy, отключение default, проверка `nginx -t` перед reload |
+| `app` | Загрузка образа по SHA, запуск контейнера и проверка HTTP |
+
+Текущий образ — `ghcr.io/chuviss/devops-ci-app:f797fd1b9ce949ddce3626ab673107d72f460458`. Имя и полный тег задаются в `ansible/group_vars/all.yml`. Контейнер публикует 5000 только на loopback VM, запросы с хоста идут через Nginx. `GET /health` должен вернуть 200 и `{"status":"ok"}`. Для выбора новой версии сначала проверяют доступность полного SHA в GHCR.
+
+Из корня репозитория установите коллекции `ansible-galaxy collection install -r ansible/requirements.yml`. Сверьте ключ хоста гостя по консоли и добавьте в локальный `known_hosts`. Вход `student` и его sudo для bootstrap требуют пароля. Для `devops` подготовьте пару ключей. По умолчанию путь — `~/.ssh/devops_vm`, путь к открытому ключу выводится из него. Для отдельного лабораторного ключа задайте `devops_private_key_file` и `ansible_private_key_file`. Если для SSH используется особый файл доверенных ключей, установите `devops_known_hosts_file` и соответствующий `UserKnownHostsFile` для Ansible.
+
+```bash
+cd ansible
+ansible-playbook -i inventory/bootstrap.ini site.yml --ask-pass --ask-become-pass
+ansible-playbook site.yml
+ansible-playbook verify.yml
+curl --fail http://127.0.0.1:18011/health
+```
+
+После установки ключа и проверки `sudo -n true` SSH отключает вход по паролю. `prod.ini` подключается как `devops` по ключу. Пароль, закрытый ключ и локальные параметры доступа хранятся за пределами репозитория. `NOPASSWD:ALL` рассчитан на изолированный учебный стенд.

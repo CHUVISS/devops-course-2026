@@ -1,0 +1,9 @@
+---
+app_image: ghcr.io/chuviss/devops-ci-app
+app_tag: "f797fd1b9ce949ddce3626ab673107d72f460458"
+app_container_name: devops-ci-app
+app_host_port: 5000
+app_internal_port: 5000
+devops_private_key_file: "~/.ssh/devops_vm"
+devops_public_key_file: "{{ devops_private_key_file }}.pub"
+devops_known_hosts_file: "~/.ssh/known_hosts"
